@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import random
+import numpy as np
+import scipy
+from sklearn.metrics.pairwise import cosine_similarity
+from math import pi, acos
 
 def cop_kmeans(dataset, k, ml=[], cl=[],
                initialization='kmpp',
@@ -31,7 +35,7 @@ def cop_kmeans(dataset, k, ml=[], cl=[],
                     return None, None
 
         clusters_, centers_ = compute_centers(clusters_, dataset, k, ml_info)
-        shift = sum(l2_distance(centers[i], centers_[i]) for i in range(k))
+        shift = sum(distance_from_cosine_similarity(centers[i], centers_[i]) for i in range(k))
         if shift <= tol:
             break
 
@@ -42,6 +46,14 @@ def cop_kmeans(dataset, k, ml=[], cl=[],
 def l2_distance(point1, point2):
     return sum([(float(i)-float(j))**2 for (i, j) in zip(point1, point2)])
 
+def distance_from_cosine_similarity(point1, point2):
+    cos_sim = cosine_similarity(scipy.sparse.csr_matrix(point1), scipy.sparse.csr_matrix(point2)).item()
+    if cos_sim < 0.0:
+        cos_sim = 0.0
+    elif cos_sim > 1.0:
+        cos_sim = 1.0
+    return (1 - (1 - (2 * acos(cos_sim) / pi)))
+
 # taken from scikit-learn (https://goo.gl/1RYPP5)
 def tolerance(tol, dataset):
     n = len(dataset)
@@ -51,7 +63,7 @@ def tolerance(tol, dataset):
     return tol * sum(variances) / dim
 
 def closest_clusters(centers, datapoint):
-    distances = [l2_distance(center, datapoint) for
+    distances = [distance_from_cosine_similarity(center, datapoint) for
                  center in centers]
     return sorted(range(len(distances)), key=lambda x: distances[x]), distances
 
@@ -113,7 +125,7 @@ def compute_centers(clusters, dataset, k, ml_info):
 
     if k_new < k:
         ml_groups, ml_scores, ml_centroids = ml_info
-        current_scores = [sum(l2_distance(centers[clusters[i]], dataset[i])
+        current_scores = [sum(distance_from_cosine_similarity(centers[clusters[i]], dataset[i])
                               for i in group)
                           for group in ml_groups]
         group_ids = sorted(range(len(ml_groups)),
@@ -149,7 +161,7 @@ def get_ml_info(ml, dataset):
                 centroids[j][d] += dataset[i][d]
             centroids[j][d] /= float(len(group))
 
-    scores = [sum(l2_distance(centroids[j], dataset[i])
+    scores = [sum(distance_from_cosine_similarity(centroids[j], dataset[i])
                   for i in groups[j])
               for j in range(len(groups))]
 
