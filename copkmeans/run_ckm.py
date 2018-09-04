@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from cop_kmeans import cop_kmeans, distance_from_cosine_similarity
-import numpy as np
-import scipy
+from cop_kmeans import cop_kmeans, l2_distance
 import argparse
 
 
@@ -43,7 +41,7 @@ def run(datafile, consfile, k, n_rep, max_iter, tolerance):
                                        max_iter=max_iter,
                                        tol=tolerance)
         if clusters is not None and centers is not None:
-            score = sum(distance_from_cosine_similarity(scipy.sparse.csr_matrix(data[j]), scipy.sparse.csr_matrix(centers[clusters[j]]))
+            score = sum(l2_distance(data[j], centers[clusters[j]])
                         for j in range(len(data)))
             if best_score is None or score < best_score:
                 best_score = score

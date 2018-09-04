@@ -5,7 +5,7 @@ import scipy
 from sklearn.metrics.pairwise import cosine_similarity
 from math import pi, acos
 
-def cop_kmeans(dataset, k, ml=[], cl=[],
+def cop_kmeans_modified(dataset, k, ml=[], cl=[],
                initialization='kmpp',
                max_iter=300, tol=1e-4):
 
@@ -21,18 +21,20 @@ def cop_kmeans(dataset, k, ml=[], cl=[],
             indices, _ = closest_clusters(centers, d)
             counter = 0
             if clusters_[i] == -1:
-                found_cluster = False
-                while (not found_cluster) and counter < len(indices):
+                max_score = -1
+                max_score_cluster = -1
+                while counter < len(indices):
                     index = indices[counter]
-                    if not violate_constraints(i, index, clusters_, ml, cl):
-                        found_cluster = True
-                        clusters_[i] = index
-                        for j in ml[i]:
-                            clusters_[j] = index
+                    score = violate_constraints_score(i, index, clusters_, ml, cl)
+                    if (score >= max_score):
+                        max_score = score
+                        max_score_cluster = index
                     counter += 1
-
-                if not found_cluster:
-                    return None, None
+                if (max_score_cluster == -1 or max_score > int(len(ml[i]) * .75)):
+                    max_score_cluster = indices[0]
+                clusters_[i] = max_score_cluster
+                for j in ml[i]:
+                    clusters_[j] = max_score_cluster
 
         clusters_, centers_ = compute_centers(clusters_, dataset, k, ml_info)
         shift = sum(distance_from_cosine_similarity(centers[i], centers_[i]) for i in range(k))
@@ -103,6 +105,22 @@ def violate_constraints(data_index, cluster_index, clusters, ml, cl):
             return True
 
     return False
+
+def violate_constraints_score(data_index, cluster_index, clusters, ml, cl):
+    score = 0
+    for i in ml[data_index]:
+        if clusters[i] != -1 and clusters[i] != cluster_index:
+            score = score
+        else:
+            score = score + 1
+
+    for i in cl[data_index]:
+        if clusters[i] == cluster_index:
+            score = score
+        else:
+            score = score + 1
+
+    return score
 
 def compute_centers(clusters, dataset, k, ml_info):
     cluster_ids = set(clusters)
