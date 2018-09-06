@@ -40,7 +40,7 @@ def cop_kmeans(dataset, k, ml=[], cl=[],
     return clusters_, centers_
 
 def l2_distance(point1, point2):
-    return sum([(float(i)-float(j))**2 for (i, j) in zip(point1, point2)])
+    return sqrt(sum([(float(i)-float(j))**2 for (i, j) in zip(point1, point2)]))
 
 # taken from scikit-learn (https://goo.gl/1RYPP5)
 def tolerance(tol, dataset):

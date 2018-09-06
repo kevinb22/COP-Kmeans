@@ -25,7 +25,7 @@ def cop_kmeans_modified(dataset, k, ml=[], cl=[],
                 max_score_cluster = -1
                 while counter < len(indices):
                     index = indices[counter]
-                    score = violate_constraints_score(i, index, clusters_, ml, cl)
+                    score = cluster_score(i, index, clusters_, ml, cl)
                     if (score >= max_score):
                         max_score = score
                         max_score_cluster = index
@@ -44,9 +44,6 @@ def cop_kmeans_modified(dataset, k, ml=[], cl=[],
         centers = centers_
 
     return clusters_, centers_
-
-def l2_distance(point1, point2):
-    return sum([(float(i)-float(j))**2 for (i, j) in zip(point1, point2)])
 
 def distance_from_cosine_similarity(point1, point2):
     cos_sim = cosine_similarity(scipy.sparse.csr_matrix(point1), scipy.sparse.csr_matrix(point2)).item()
@@ -95,28 +92,17 @@ def initialize_centers(dataset, k, method):
 
         return centers
 
-def violate_constraints(data_index, cluster_index, clusters, ml, cl):
-    for i in ml[data_index]:
-        if clusters[i] != -1 and clusters[i] != cluster_index:
-            return True
-
-    for i in cl[data_index]:
-        if clusters[i] == cluster_index:
-            return True
-
-    return False
-
-def violate_constraints_score(data_index, cluster_index, clusters, ml, cl):
+def cluster_score(data_index, cluster_index, clusters, ml, cl):
     score = 0
     for i in ml[data_index]:
         if clusters[i] != -1 and clusters[i] != cluster_index:
-            score = score
+            continue
         else:
             score = score + 1
 
     for i in cl[data_index]:
         if clusters[i] == cluster_index:
-            score = score
+            continue
         else:
             score = score + 1
 
